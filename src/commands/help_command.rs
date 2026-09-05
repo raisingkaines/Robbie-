@@ -2,13 +2,13 @@ use crate::{Context, Error};
 use chrono::Utc;
 use poise::serenity_prelude as serenity;
 
-#[poise::command(slash_command)]
+#[poise::command(slash_command, guild_only)]
 pub async fn help(
     ctx: Context<'_>,
     #[description = "Specific command name for detailed syntax help (e.g. ban, move, shutdown)"]
     command: Option<String>,
 ) -> Result<(), Error> {
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     if let Some(cmd_name) = command {
         let name = cmd_name.trim().to_lowercase();
@@ -200,7 +200,7 @@ pub async fn help(
         .footer(serenity::CreateEmbedFooter::new("Robbie | Sanctuary Free Realms"))
         .timestamp(Utc::now());
 
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
     Ok(())
 }
 

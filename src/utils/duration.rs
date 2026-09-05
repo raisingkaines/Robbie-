@@ -1,5 +1,15 @@
-use chrono::{Duration, Utc, DateTime};
+use chrono::{Datelike, DateTime, Duration, Utc};
 use std::fmt;
+
+pub const PERMANENT_BAN_DATE_UNIX: i64 = 253402300799; // 9999-12-31T23:59:59Z
+
+pub fn permanent_ban_date() -> DateTime<Utc> {
+    DateTime::from_timestamp(PERMANENT_BAN_DATE_UNIX, 0).expect("Valid permanent ban timestamp")
+}
+
+pub fn is_permanent_ban(dt: &DateTime<Utc>) -> bool {
+    dt.timestamp() >= PERMANENT_BAN_DATE_UNIX || dt.year() >= 9999
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParsedDuration {
@@ -8,9 +18,13 @@ pub enum ParsedDuration {
 }
 
 impl ParsedDuration {
+    pub fn is_permanent(&self) -> bool {
+        matches!(self, ParsedDuration::Permanent)
+    }
+
     pub fn to_expiration_time(&self) -> Option<DateTime<Utc>> {
         match self {
-            ParsedDuration::Permanent => None,
+            ParsedDuration::Permanent => Some(permanent_ban_date()),
             ParsedDuration::Temporary(dur) => Some(Utc::now() + *dur),
         }
     }
@@ -159,6 +173,20 @@ mod tests {
 
         let two_days = ParsedDuration::Temporary(Duration::days(2));
         assert_eq!(two_days.to_string(), "2 day(s)");
+    }
+
+    #[test]
+    fn test_permanent_ban_duration() {
+        let perm = ParsedDuration::Permanent;
+        assert!(perm.is_permanent());
+        let exp = perm.to_expiration_time().expect("Must have expiration time");
+        assert!(is_permanent_ban(&exp));
+        assert_eq!(exp.timestamp(), PERMANENT_BAN_DATE_UNIX);
+
+        let temp = ParsedDuration::Temporary(Duration::hours(1));
+        assert!(!temp.is_permanent());
+        let temp_exp = temp.to_expiration_time().expect("Must have expiration time");
+        assert!(!is_permanent_ban(&temp_exp));
     }
 }
 

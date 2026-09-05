@@ -1,10 +1,12 @@
-use crate::utils::{find_target, log_mod_action, require_admin, send_reply_and_audit};
+﻿use crate::utils::{find_target, log_mod_action, require_admin, send_reply_and_audit};
 use crate::{Context, Error};
 use chrono::Utc;
 use poise::serenity_prelude as serenity;
 
 #[poise::command(
     slash_command,
+    guild_only,
+    default_member_permissions = "ADMINISTRATOR",
     subcommands("promote", "demote", "broadcast", "motd", "teleport", "move_player", "coords")
 )]
 pub async fn admin_cmd(_: Context<'_>) -> Result<(), Error> {
@@ -17,7 +19,7 @@ pub async fn promote(
     #[description = "Target player name"] player: String,
 ) -> Result<(), Error> {
     require_admin(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let (user, character) = match find_target(&ctx, &player).await? {
         Some(p) => p,
@@ -44,7 +46,7 @@ pub async fn demote(
     #[description = "Target player name"] player: String,
 ) -> Result<(), Error> {
     require_admin(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let (user, character) = match find_target(&ctx, &player).await? {
         Some(p) => p,
@@ -70,7 +72,7 @@ pub async fn broadcast(
     #[description = "Message to broadcast in-game"] message: String,
 ) -> Result<(), Error> {
     require_admin(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let trimmed = message.trim();
     if trimmed.is_empty() {
@@ -85,7 +87,7 @@ pub async fn broadcast(
                 .colour(serenity::Colour::from_rgb(52, 152, 219))
                 .field("Message", format!("*\"{trimmed}\"*"), false)
                 .field("Sender", ctx.author().name.clone(), true);
-            ctx.send(poise::CreateReply::default().embed(embed)).await?;
+            ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
         }
         Err(e) => {
             ctx.say(format!("Failed to deliver broadcast to Gateway: {e}")).await?;
@@ -101,7 +103,7 @@ pub async fn motd(
     #[description = "Message body text displayed on login"] message: String,
 ) -> Result<(), Error> {
     require_admin(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let title = title.trim();
     let message = message.trim();
@@ -141,7 +143,7 @@ pub async fn teleport(
     #[description = "Destination zone name (e.g. sanctuary, seaside, snowhill)"] zone: String,
 ) -> Result<(), Error> {
     require_admin(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let player = player.trim();
     let zone = zone.trim();
@@ -184,7 +186,7 @@ pub async fn move_player(
     #[description = "Optional heading rotation in degrees (0 - 360)"] rotation: Option<f32>,
 ) -> Result<(), Error> {
     require_admin(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     if !x.is_finite() || !y.is_finite() || !z.is_finite() || rotation.map_or(false, |r| !r.is_finite()) {
         ctx.say("Invalid coordinates: values must be finite numbers.").await?;
@@ -250,7 +252,7 @@ pub async fn coords(
     #[description = "Target player name"] player: String,
 ) -> Result<(), Error> {
     require_admin(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let (user, character) = match find_target(&ctx, &player).await? {
         Some(p) => p,
@@ -285,6 +287,6 @@ pub async fn coords(
         .footer(serenity::CreateEmbedFooter::new("Robbie | Sanctuary Free Realms Administration"))
         .timestamp(Utc::now());
 
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
     Ok(())
 }

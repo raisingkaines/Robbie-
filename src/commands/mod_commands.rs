@@ -1,4 +1,4 @@
-use crate::db::models::DbWarning;
+﻿use crate::db::models::DbWarning;
 use crate::embeds;
 use crate::utils::{find_target, log_mod_action, parse_duration_str, require_moderator, send_reply_and_audit, ParsedDuration};
 use crate::warnings::evaluate_warning_escalation;
@@ -8,6 +8,8 @@ use poise::serenity_prelude as serenity;
 
 #[poise::command(
     slash_command,
+    guild_only,
+    default_member_permissions = "MODERATE_MEMBERS",
     subcommands(
         "ban", "unban", "mute", "unmute", "kick", "warn", "warnings", "clearwarning",
         "lookup", "history", "reports", "resolve", "rename", "chatlogs", "commandlogs", "coords"
@@ -25,7 +27,7 @@ pub async fn ban(
     #[description = "Reason for the ban"] reason: Option<String>,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let parsed_dur = parse_duration_str(&duration)
         .ok_or_else(|| "Invalid duration format. Use e.g. 30m, 2h, 7d, or perm.")?;
@@ -57,7 +59,7 @@ pub async fn unban(
     #[description = "Target player name"] player: String,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let (user, character) = match find_target(&ctx, &player).await? {
         Some(p) => p,
@@ -79,7 +81,7 @@ pub async fn mute(
     #[description = "Reason for the mute"] reason: Option<String>,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let parsed_dur = parse_duration_str(&duration)
         .ok_or_else(|| "Invalid duration format. Use e.g. 15m, 1h, 1d.")?;
@@ -110,7 +112,7 @@ pub async fn unmute(
     #[description = "Target player name"] player: String,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let (user, character) = match find_target(&ctx, &player).await? {
         Some(p) => p,
@@ -131,7 +133,7 @@ pub async fn kick(
     #[description = "Reason for the kick"] reason: Option<String>,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let (user, character) = match find_target(&ctx, &player).await? {
         Some(p) => p,
@@ -159,7 +161,7 @@ pub async fn warn(
     #[description = "Reason for the warning"] reason: String,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let reason = reason.trim().to_string();
     if reason.is_empty() {
@@ -214,7 +216,7 @@ pub async fn warnings(
     #[description = "Target player name"] player: String,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let (_, character) = match find_target(&ctx, &player).await? {
         Some(p) => p,
@@ -243,7 +245,7 @@ pub async fn warnings(
         }
     }
 
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
     Ok(())
 }
 
@@ -253,7 +255,7 @@ pub async fn clearwarning(
     #[description = "Warning ID to clear"] id: i64,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let cleared = ctx.data().database.clear_warning_by_id(id).await?;
     let msg = if cleared {
@@ -271,7 +273,7 @@ pub async fn lookup(
     #[description = "Target player name"] player: String,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let (user, character) = match find_target(&ctx, &player).await? {
         Some(p) => p,
@@ -289,7 +291,7 @@ pub async fn lookup(
     });
 
     let embed = embeds::lookup_embed(&user, &character, &characters, online_info, &active_warnings, &recent_logs);
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
     Ok(())
 }
 
@@ -299,7 +301,7 @@ pub async fn history(
     #[description = "Target player name"] player: String,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let (user, _) = match find_target(&ctx, &player).await? {
         Some(p) => p,
@@ -308,7 +310,7 @@ pub async fn history(
 
     let logs = ctx.data().database.get_moderation_logs_for_target(user.id, 10).await?;
     let embed = embeds::history_embed(&player, &logs);
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
     Ok(())
 }
 
@@ -319,7 +321,7 @@ pub async fn reports(
     #[description = "Filter by status: Pending, Resolved, Dismissed (optional)"] status: Option<String>,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let reports = ctx.data().database.get_player_reports(player.as_deref(), status.as_deref(), 15).await?;
     if reports.is_empty() {
@@ -347,7 +349,7 @@ pub async fn reports(
         .footer(serenity::CreateEmbedFooter::new("Robbie | Sanctuary Free Realms Moderation"))
         .timestamp(Utc::now());
 
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
     Ok(())
 }
 
@@ -359,7 +361,7 @@ pub async fn resolve(
     #[description = "Resolution notes"] notes: Option<String>,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let st = match status.trim().to_lowercase().as_str() {
         "resolve" | "resolved" => "Resolved",
@@ -393,7 +395,7 @@ pub async fn rename(
     #[description = "Reason for renaming (e.g. Inappropriate Name)"] reason: Option<String>,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let trimmed_new = new_name.trim();
     if trimmed_new.len() < 3 || trimmed_new.len() > 32 {
@@ -436,7 +438,7 @@ pub async fn chatlogs(
     #[description = "Number of logs to fetch (default 20, max 50)"] limit: Option<usize>,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let max_rows = limit.unwrap_or(20).clamp(1, 50) as i64;
     let logs = ctx.data().database.get_chat_logs(player.as_deref(), channel.as_deref(), max_rows).await?;
@@ -463,7 +465,7 @@ pub async fn chatlogs(
         .footer(serenity::CreateEmbedFooter::new("Robbie | Sanctuary In-Game Chat Monitor"))
         .timestamp(Utc::now());
 
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
     Ok(())
 }
 
@@ -475,7 +477,7 @@ pub async fn commandlogs(
     #[description = "Number of logs to fetch (default 20, max 50)"] limit: Option<usize>,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let max_rows = limit.unwrap_or(20).clamp(1, 50) as i64;
     let logs = ctx.data().database.get_command_logs(actor.as_deref(), command.as_deref(), max_rows).await?;
@@ -504,7 +506,7 @@ pub async fn commandlogs(
         .footer(serenity::CreateEmbedFooter::new("Robbie | Sanctuary Command Audit Trail"))
         .timestamp(Utc::now());
 
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
     Ok(())
 }
 
@@ -514,7 +516,7 @@ pub async fn coords(
     #[description = "Target player name"] player: String,
 ) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let (user, character) = match find_target(&ctx, &player).await? {
         Some(p) => p,
@@ -548,6 +550,6 @@ pub async fn coords(
         .footer(serenity::CreateEmbedFooter::new("Robbie | Sanctuary Free Realms Moderation"))
         .timestamp(Utc::now());
 
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
     Ok(())
 }

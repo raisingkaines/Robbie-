@@ -66,7 +66,7 @@ pub async fn evaluate_warning_escalation(
 
     match &action {
         AutoAction::AutoBan { duration: None, .. } => {
-            db.set_user_locked_until(user_id, Some(chrono::DateTime::<Utc>::MAX_UTC)).await?;
+            db.set_user_locked_until(user_id, Some(crate::utils::permanent_ban_date())).await?;
         }
         AutoAction::AutoBan { duration: Some(dur), .. } => {
             let ban_until = Utc::now() + *dur;

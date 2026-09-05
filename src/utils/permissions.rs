@@ -8,10 +8,32 @@ pub enum PermissionLevel {
     Administrator,
 }
 
+pub fn require_staff_guild(
+    ctx: &poise::Context<'_, crate::Data, crate::Error>,
+    config: &Config,
+) -> Result<(), crate::Error> {
+    if let Some(authorized_guild_id) = config.discord.guild_id {
+        match ctx.guild_id() {
+            Some(gid) if gid.get() == authorized_guild_id => Ok(()),
+            _ => Err("Access Denied: Administrative and moderation commands are restricted to the authorized staff server.".into()),
+        }
+    } else if ctx.guild_id().is_none() {
+        Err("Access Denied: Administrative and moderation commands cannot be executed in direct messages.".into())
+    } else {
+        Ok(())
+    }
+}
+
 pub fn get_user_permission_level(
     ctx: &poise::Context<'_, crate::Data, crate::Error>,
     config: &Config,
 ) -> PermissionLevel {
+    if let Some(authorized_guild_id) = config.discord.guild_id {
+        if ctx.guild_id().map(|g| g.get()) != Some(authorized_guild_id) {
+            return PermissionLevel::Player;
+        }
+    }
+
     let member = match ctx.author_member() {
         Some(m) => m,
         None => return PermissionLevel::Player,
@@ -76,6 +98,7 @@ pub fn require_moderator(
     ctx: &poise::Context<'_, crate::Data, crate::Error>,
     config: &Config,
 ) -> Result<(), crate::Error> {
+    require_staff_guild(ctx, config)?;
     match get_user_permission_level(ctx, config) {
         PermissionLevel::Moderator | PermissionLevel::Administrator => Ok(()),
         PermissionLevel::Player => {
@@ -99,6 +122,7 @@ pub fn require_admin(
     ctx: &poise::Context<'_, crate::Data, crate::Error>,
     config: &Config,
 ) -> Result<(), crate::Error> {
+    require_staff_guild(ctx, config)?;
     match get_user_permission_level(ctx, config) {
         PermissionLevel::Administrator => Ok(()),
         _ => {

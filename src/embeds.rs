@@ -20,6 +20,7 @@ pub fn ban_embed(
     warning_points: i32,
 ) -> CreateEmbed {
     let expires_str = match expires_at {
+        Some(dt) if crate::utils::is_permanent_ban(&dt) => "Never (Permanent)".to_string(),
         Some(dt) => format!("<t:{}:F> (<t:{}:R>)", dt.timestamp(), dt.timestamp()),
         None => "Never (Permanent)".to_string(),
     };
@@ -197,7 +198,13 @@ pub fn lookup_embed(
         .collect();
 
     let ban_status = match user.locked_until {
-        Some(dt) if dt > Utc::now() => format!("Banned until <t:{}:F>", dt.timestamp()),
+        Some(dt) if dt > Utc::now() => {
+            if crate::utils::is_permanent_ban(&dt) {
+                "Permanently Banned".to_string()
+            } else {
+                format!("Banned until <t:{}:F>", dt.timestamp())
+            }
+        }
         _ => "Clean (No Active Ban)".to_string(),
     };
 

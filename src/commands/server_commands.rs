@@ -1,10 +1,12 @@
-use crate::utils::{parse_duration_str, require_admin, require_moderator, send_audit_log, ParsedDuration};
+﻿use crate::utils::{parse_duration_str, require_admin, require_moderator, send_audit_log, ParsedDuration};
 use crate::{Context, Error};
 use chrono::Utc;
 use poise::serenity_prelude as serenity;
 
 #[poise::command(
     slash_command,
+    guild_only,
+    default_member_permissions = "ADMINISTRATOR",
     subcommands("status", "players", "shutdown", "cancel_shutdown", "maintenance")
 )]
 pub async fn server_cmd(_: Context<'_>) -> Result<(), Error> {
@@ -13,7 +15,7 @@ pub async fn server_cmd(_: Context<'_>) -> Result<(), Error> {
 
 #[poise::command(slash_command)]
 pub async fn status(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let gateway = &ctx.data().gateway;
     let database = &ctx.data().database;
@@ -54,7 +56,7 @@ pub async fn status(ctx: Context<'_>) -> Result<(), Error> {
                 .footer(serenity::CreateEmbedFooter::new("Robbie | Sanctuary Free Realms Emulator"))
                 .timestamp(Utc::now());
 
-            ctx.send(poise::CreateReply::default().embed(embed)).await?;
+            ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
         }
         Err(e) => {
             let embed = serenity::CreateEmbed::new()
@@ -66,7 +68,7 @@ pub async fn status(ctx: Context<'_>) -> Result<(), Error> {
                 .footer(serenity::CreateEmbedFooter::new("Robbie | Sanctuary Free Realms Emulator"))
                 .timestamp(Utc::now());
 
-            ctx.send(poise::CreateReply::default().embed(embed)).await?;
+            ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
         }
     }
 
@@ -76,7 +78,7 @@ pub async fn status(ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(slash_command)]
 pub async fn players(ctx: Context<'_>) -> Result<(), Error> {
     require_moderator(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let gateway = &ctx.data().gateway;
     let players_res = gateway.get_online_players().await;
@@ -110,7 +112,7 @@ pub async fn players(ctx: Context<'_>) -> Result<(), Error> {
                 embed = embed.description(list_str);
             }
 
-            ctx.send(poise::CreateReply::default().embed(embed)).await?;
+            ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
         }
         Err(e) => {
             ctx.say(format!("Could not fetch online players from Gateway: {e}")).await?;
@@ -127,7 +129,7 @@ pub async fn shutdown(
     #[description = "Reason displayed in-game to players"] reason: Option<String>,
 ) -> Result<(), Error> {
     require_admin(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let parsed_dur = parse_duration_str(&countdown)
         .ok_or_else(|| "Invalid countdown format. Use e.g. 30s, 2m, 5m, 10m.")?;
@@ -168,7 +170,7 @@ pub async fn shutdown(
                     .timestamp(Utc::now());
 
                 send_audit_log(&ctx, embed.clone()).await;
-                ctx.send(poise::CreateReply::default().embed(embed)).await?;
+                ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
             } else {
                 let msg = api_resp.message.unwrap_or_else(|| "Failed to initiate shutdown.".to_string());
                 ctx.say(format!("Shutdown request rejected: {msg}")).await?;
@@ -185,7 +187,7 @@ pub async fn shutdown(
 #[poise::command(slash_command)]
 pub async fn cancel_shutdown(ctx: Context<'_>) -> Result<(), Error> {
     require_admin(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let author_name = ctx.author().name.clone();
     let gateway = &ctx.data().gateway;
@@ -209,7 +211,7 @@ pub async fn cancel_shutdown(ctx: Context<'_>) -> Result<(), Error> {
                     .timestamp(Utc::now());
 
                 send_audit_log(&ctx, embed.clone()).await;
-                ctx.send(poise::CreateReply::default().embed(embed)).await?;
+                ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
             } else {
                 let msg = api_resp.message.unwrap_or_else(|| "No active shutdown to cancel.".to_string());
                 ctx.say(format!("Cancel failed: {msg}")).await?;
@@ -230,7 +232,7 @@ pub async fn maintenance(
     #[description = "Optional reason for maintenance"] reason: Option<String>,
 ) -> Result<(), Error> {
     require_admin(&ctx, &ctx.data().config)?;
-    ctx.defer().await?;
+    ctx.defer_ephemeral().await?;
 
     let act = action.trim().to_lowercase();
     let enabled = match act.as_str() {
@@ -278,7 +280,7 @@ pub async fn maintenance(
                     .timestamp(Utc::now());
 
                 send_audit_log(&ctx, embed.clone()).await;
-                ctx.send(poise::CreateReply::default().embed(embed)).await?;
+                ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
             } else {
                 let msg = api_resp.message.unwrap_or_else(|| "Failed to update maintenance mode.".to_string());
                 ctx.say(format!("Maintenance request failed: {msg}")).await?;

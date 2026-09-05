@@ -17,13 +17,13 @@ pub async fn find_target(
 ) -> Result<Option<(DbUser, DbCharacter)>, Error> {
     let trimmed = player.trim();
     if trimmed.is_empty() {
-        ctx.say("Player name cannot be empty.").await?;
+        ctx.send(poise::CreateReply::default().content("Player name cannot be empty.").ephemeral(true)).await?;
         return Ok(None);
     }
     match ctx.data().database.find_user_and_character_by_name(trimmed).await? {
         Some(pair) => Ok(Some(pair)),
         None => {
-            ctx.say(format!("Player \"{trimmed}\" was not found in the Sanctuary database.")).await?;
+            ctx.send(poise::CreateReply::default().content(format!("Player \"{trimmed}\" was not found in the Sanctuary database.")).ephemeral(true)).await?;
             Ok(None)
         }
     }
@@ -57,6 +57,6 @@ pub async fn send_reply_and_audit(
     embed: serenity::CreateEmbed,
 ) -> Result<(), Error> {
     send_audit_log(ctx, embed.clone()).await;
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    ctx.send(poise::CreateReply::default().embed(embed).ephemeral(true)).await?;
     Ok(())
 }

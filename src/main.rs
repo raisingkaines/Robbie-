@@ -92,7 +92,7 @@ async fn main() -> Result<()> {
                     match error {
                         poise::FrameworkError::Command { error, ctx, .. } => {
                             warn!("Error in command '{}': {:?}", ctx.command().name, error);
-                            let _ = ctx.say(format!("Error: {error}")).await;
+                            let _ = ctx.send(poise::CreateReply::default().content(format!("Error: {error}")).ephemeral(true)).await;
                         }
                         poise::FrameworkError::Setup { error, .. } => {
                             error!("Error in bot setup: {:?}", error);
@@ -137,9 +137,10 @@ async fn main() -> Result<()> {
 
                 if let Some(guild_id) = config_clone.discord.guild_id {
                     info!("Registering slash commands to guild ID: {guild_id}");
+                    let _ = serenity::Command::set_global_commands(ctx, vec![]).await;
                     poise::builtins::register_in_guild(ctx, &framework.options().commands, serenity::GuildId::new(guild_id)).await?;
                 } else {
-                    info!("Registering slash commands globally...");
+                    warn!("WARNING: No guild_id configured. Commands will be registered globally. Set guild_id to restrict commands to your staff server.");
                     poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 }
 

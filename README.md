@@ -64,6 +64,12 @@
    - **Graceful Shutdown**: Listens for termination signals (SIGINT / SIGTERM) to cleanly disconnect Serenity gateway shards and drain connection pools before process termination.
    - **Automated Test Suites**: Built-in unit tests covering duration parsing, warning points escalation tiers, coordinate validation, and configuration deserialization.
 
+9. **Security, Privacy & Guild Isolation**:
+   - **Ephemeral Player Data**: All moderation lookups, private chat logs, command audit trails, coordinates, and infraction history respond ephemerally to the invoking staff member. Sensitive player data is never leaked into public Discord channels.
+   - **Dedicated Audit Channel**: Permanent moderation and admin records are dispatched directly to your private staff audit channel (`audit_log_channel_id`).
+   - **Guild-Gated Execution**: Commands enforce `guild_only`, Discord native `default_member_permissions` (`ADMINISTRATOR` / `MODERATE_MEMBERS`), and guild authorization checks. Unapproved servers and direct messages are strictly blocked.
+   - **Safe Permanent Bans**: Permanent bans safely persist the indefinite timestamp (`9999-12-31T23:59:59Z`, matching Sanctuary C# `DateTimeOffset.MaxValue`), ensuring permanent locking on both SQLite and MySQL while preventing database overflow.
+
 ---
 
 ## Setup & Installation
