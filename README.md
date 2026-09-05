@@ -1,4 +1,4 @@
-# Robbie — Sanctuary Free Realms Discord Moderation Bot
+# Robbie: Sanctuary Free Realms Discord Moderation Bot
 
 <div align="center">
   <img src="assets/robbie_avatar.png" alt="Robbie - Sanctuary Discord Moderation Bot" width="180" />
