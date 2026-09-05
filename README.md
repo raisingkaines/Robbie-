@@ -1,6 +1,9 @@
 # Robbie — Sanctuary Free Realms Discord Moderation Bot
 
-Robbie is the dedicated, high-performance Rust Discord moderation and administration bot for the Open-Source Free Realms (Sanctuary) server emulator, supporting both SQLite and MySQL / MariaDB databases.
+<div align="center">
+  <img src="assets/robbie_avatar.png" alt="Robbie - Sanctuary Discord Moderation Bot" width="180" />
+  <p><strong>Robbie</strong> is the dedicated, high-performance Rust Discord moderation and administration bridge for the Open-Source Free Realms (Sanctuary) server emulator, supporting both SQLite and MySQL / MariaDB databases.</p>
+</div>
 
 ### Visual Assets (`assets/` directory)
 - `assets/robbie_avatar.png`: 512x512 square profile picture centered on Robbie's helmet, ears, and grumpy expression (ready to set as your Discord bot avatar in the Developer Portal).
