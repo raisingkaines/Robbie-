@@ -139,3 +139,5 @@ cargo build --release
 # Run bot
 cargo run --release
 ```
+BASED ON:
+https://github.com/Open-Source-Free-Realms/Chatty
